@@ -1,0 +1,72 @@
+
+header{
+    height: 45px;
+    position: relative;
+    margin: auto;
+    background-color: #212521;
+}
+
+.head{
+    height: 45px;
+    position: relative;
+    display: flex;  
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 25px;
+}
+
+main{
+    padding: 0 15%;
+}
+
+.week{
+    margin-top: 40px;
+    font-size: 20px;
+    border: 1px solid black;
+    padding: 0px 10px;
+}
+.daily{
+    margin-top: 40px;
+    font-size: 20px; 
+    border: 1px solid black;
+    padding: 0px 10px;
+}
+
+.week_Symbol{    
+    font-size: 18px;
+    padding-top: 30px;
+}
+.week_Q{
+    font-size: 18px;
+    padding-top: 10px;
+}
+.week_Evnet{
+    font-size: 18px;
+    padding-top: 10px;
+}
+.daily_Symbol{
+    font-size: 18px;
+    padding-top: 30px;
+}
+.daily_Q{
+    font-size: 18px;
+    padding-top: 10px;
+}
+
+.Elemental{
+    font-size: 15px;
+    padding: 12px 0px 0px 0px;
+    width: 100%;
+    grid-template-columns: repeat(auto-fill, minmax(30%, auto));
+    background-color: aliceblue;
+}   
+
+label{
+    width: 400px;
+    height: 60px;
+}
+
+.none{
+    display: none;
+}
