@@ -4,6 +4,14 @@
  * Copyright 2011-2019 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
+
+@font-face {
+    font-family: 'MaplestoryOTFBold';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFBold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
   --blue: #007bff;
   --indigo: #6610f2;
@@ -8133,7 +8141,7 @@ a.text-dark:hover, a.text-dark:focus {
     border-color: #dee2e6; } }
 
 body {
-  font-family: "메이플스토리", Arial, sans-serif;
+  font-family: "MaplestoryOTFBold", Arial, sans-serif;
   font-size: 14px;
   line-height: 1.8;
   font-weight: normal;
@@ -8165,7 +8173,7 @@ h1, h2, h3, h4, h5,
 .h1, .h2, .h3, .h4, .h5 {
   line-height: 1.5;
   font-weight: 400;
-  font-family: "메이플스토리", Arial, sans-serif;
+  font-family: "MaplestoryOTFBold", Arial, sans-serif;
   color: #000; }
 
 .ftco-section {
