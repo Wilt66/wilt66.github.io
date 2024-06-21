@@ -4221,6 +4221,11 @@ input[type="button"].btn-block {
   padding-left: 0;
   border-radius: 0; }
 
+.footer{
+  font-size: 20px;
+  text-align: right;
+}
+
 .alert {
   position: relative;
   padding: 0.75rem 1.25rem;
