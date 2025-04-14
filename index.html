@@ -224,7 +224,7 @@
     function renderResult(type) {
       const data = resultData[type];
       const html = `
-        <h2><strong>당신의 예배 성향은 ${data.title}입니다!</strong></h2>
+        <h2><strong>당신의 예배 성향은 <span style='color: #fb0101;'>${data.title}</span>입니다!</strong></h2>
         <img src="${data.img}" alt="${data.title} 이미지">
         <p class="verse">${data.verse}</p>
         <p><b>당신의 특징은!</b></p>
