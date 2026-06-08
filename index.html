@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>한능검 패스</title>
+    <title>한능검 패스 - 지능형 맞춤 학습 플랫폼</title>
+    <!-- Chart.js 라이브러리 CDN 추가 (시각화 분석용) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 1. 반응형 레이아웃 설정 (Flex) */
         body { 
@@ -28,7 +30,7 @@
             text-align: center; 
         }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         h1 { color: #1a73e8; margin-bottom: 20px; font-size: clamp(1.5rem, 4vw, 2rem); }
         h3 { line-height: 1.5; word-break: keep-all; font-size: clamp(1.1rem, 3vw, 1.3rem); }
 
@@ -56,6 +58,8 @@
         }
         .btn:hover { background-color: #1557b0; transform: translateY(-2px); }
         .btn.secondary { background-color: #5f6368; }
+        .btn.ai-mode { background-color: #8e24aa; }
+        .btn.ai-mode:hover { background-color: #6a1b9a; }
 
         /* 3. 리스트 및 이미지 스타일 */
         .option-list { text-align: left; margin: 25px 0; }
@@ -81,14 +85,14 @@
         .status-x { color: #d93025; font-weight: bold; }
         tr.clickable:hover { background-color: #f1f7ff; cursor: pointer; }
 
-        /* 5. 모달(팝업) 상세 설정 - 버그 수정 반영 */
+        /* 5. 모달(팝업) 상세 설정 */
         .modal { 
-            display: none; /* JS에서 flex로 변경함 */
+            display: none; 
             position: fixed; z-index: 1000; left: 0; top: 0; 
             width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); 
             backdrop-filter: blur(4px); 
-            align-items: center; /* 중앙 정렬 */
-            justify-content: center; /* 중앙 정렬 */
+            align-items: center; 
+            justify-content: center; 
         }
         .modal-content { 
             background: white; 
@@ -97,14 +101,23 @@
             max-width: 500px; 
             border-radius: 20px; 
             position: relative; 
-            max-height: 85vh; /* 화면 높이의 85% 제한 */
-            overflow-y: auto; /* 내부 스크롤 허용 */
+            max-height: 85vh; 
+            overflow-y: auto; 
             text-align: left; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            padding-bottom: 40px; /* 닫기 버튼 아래 여유 공간 확보 */
+            padding-bottom: 40px; 
         }
         .opt-correct { background-color: #d4edda !important; border: 2px solid #28a745 !important; }
         .opt-wrong { background-color: #f8d7da !important; border: 2px solid #dc3545 !important; }
+
+        /* 시각화 섹션 스타일 */
+        .analysis-box {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 1px solid #eeb;
+        }
 
         @media (max-width: 480px) {
             .container { padding: 20px; }
@@ -115,14 +128,24 @@
 <body>
 
     <div class="container">
+        <!-- 메인 시작 화면: 전공 퍼포먼스용 모드 분리 -->
         <div id="start-screen">
             <h1>한능검 패스</h1>
-            <p style="color: #666; margin-bottom: 30px;">랜덤 20문제가 출제됩니다.</p>
-            <button class="btn" onclick="startQuiz()">시험 시작하기</button>
+            <p style="color: #666; margin-bottom: 20px;">학습 데이터 기반 지능형 모의고사 시스템</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 30px;">
+                <button class="btn" onclick="startQuiz('normal')">일반 모의고사 (랜덤 20문항)</button>
+                <button class="btn ai-mode" onclick="startQuiz('ai')">🚀 취약점 극복 AI 모의고사</button>
+            </div>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">* AI 모의고사는 오답 기록을 분석하여 취약 단원을 집중 출제합니다.</p>
         </div>
 
+        <!-- 퀴즈 진행 화면 -->
         <div id="quiz-screen" class="hidden">
-            <div id="progress" style="font-weight:bold; color:#1a73e8; margin-bottom:10px;">문제 1 / 20</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div id="progress" style="font-weight:bold; color:#1a73e8;">문제 1 / 20</div>
+                <div id="badge-zone"></div>
+            </div>
             <h3 id="question-text">질문을 불러오는 중...</h3>
             <div id="image-container"></div>
             <div id="options" class="option-list"></div>
@@ -132,12 +155,20 @@
             </div>
         </div>
 
+        <!-- 결과 리포트 화면 -->
         <div id="result-screen" class="hidden">
             <h2>테스트 결과</h2>
             <h1 id="final-score" style="font-size: 3.5rem; color: #d93025; margin: 10px 0;">0점</h1>
             <p id="feedback-msg" style="margin-bottom: 25px; font-weight: 500;"></p>
+            
+            <!-- 핵심 퍼포먼스: 단원별 레이더 차트 분석 시각화 -->
+            <div class="analysis-box">
+                <h3 style="margin-top: 0; color: #333; font-size: 1.1rem;">📊 단원별 맞춤 성취도 분석</h3>
+                <canvas id="weaknessChart" style="max-height: 260px; margin: 0 auto;"></canvas>
+            </div>
+
             <div class="button-group">
-                <button class="btn" onclick="location.reload()">다시 응시</button>
+                <button class="btn" onclick="location.reload()">처음으로</button>
                 <button class="btn secondary" id="review-btn" onclick="toggleReview()">오답 확인</button>
             </div>
             
@@ -157,6 +188,7 @@
         </div>
     </div>
 
+    <!-- 상세 보기 모달 팝업 -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <h2 id="modal-title" style="margin-top:0; color:#1a73e8; font-size: 1.2rem;">문제 상세 보기</h2>
@@ -170,27 +202,89 @@
         let selectedQuestions = [];
         let currentIdx = 0;
         let userAnswers = [];
+        let activeMode = 'normal'; // 실행 모드 트래킹
 
-        fetch('questions1.json')
+        // 5대 핵심 카테고리 정의
+        const categories = ["고대", "삼국", "고려", "조선", "근현대"];
+
+        // 기출문제 뱅크 데이터 로드
+        fetch('questions.json')
             .then(res => res.json())
             .then(data => { allQuestions = data; })
-            .catch(err => { alert("JSON 데이터를 불러올 수 없습니다."); });
+            .catch(err => { alert("JSON 기출 데이터베이스를 불러올 수 없습니다."); });
 
-        function startQuiz() {
+        // 퀴즈 시작 함수 (알고리즘 분기)
+        function startQuiz(mode) {
             if (allQuestions.length === 0) return;
-            selectedQuestions = allQuestions.sort(() => Math.random() - 0.5).slice(0, 20);
+            activeMode = mode;
+
+            // 로컬 스토리지 통계 데이터 추출
+            const stats = JSON.parse(localStorage.getItem('hangeungom_stats'));
+
+            // [분기 1] 일반 모드이거나 누적 통계 데이터가 학습되지 않은 경우 -> 완전 무작위 추출
+            if (mode === 'normal' || !stats) {
+                if (mode === 'ai') alert("누적된 학습 데이터가 없어 일반 모의고사로 우선 대체 구동합니다.");
+                selectedQuestions = allQuestions.sort(() => Math.random() - 0.5).slice(0, 20);
+            } 
+            // [분기 2] AI 모드 및 통계 데이터 축적 시 -> 데이터 불균형을 차단한 방어선 보장 가중치 추천 알고리즘 가동
+            else {
+                let finalPool = [];
+
+                // 1단계: 5대 시대별 분류마다 최소 2문항씩(총 10문항) 우선 무작위 균등 선점 (변별력 방어선 구축)
+                categories.forEach(cat => {
+                    let catGroup = allQuestions.filter(q => q.category === cat);
+                    catGroup.sort(() => Math.random() - 0.5);
+                    finalPool.push(...catGroup.slice(0, 2));
+                });
+
+                // 2단계: 카테고리별 오답률 확률 벡터 벡터 연산
+                let failureRates = {};
+                categories.forEach(cat => {
+                    const total = (stats[cat]?.correct || 0) + (stats[cat]?.wrong || 0);
+                    // 푼 적 없는 대단원은 기본 위험도 값 50% 밸런싱 세팅
+                    failureRates[cat] = total === 0 ? 0.5 : (stats[cat].wrong / total);
+                });
+
+                // 3단계: 미선점 풀 중에서 오답률 가중치를 반영한 랭킹 정렬 알고리즘 전개
+                let remainingPool = allQuestions.filter(q => !finalPool.includes(q));
+                remainingPool.sort((a, b) => {
+                    const rateA = failureRates[a.category] || 0.5;
+                    const rateB = failureRates[b.category] || 0.5;
+                    return rateB - rateA; // 오답 위험도 기준 내림차순 정렬
+                });
+
+                // 상위 위험군 풀 15문항을 발췌한 뒤 셔플을 주어 변칙성 부여 후 남은 10문항 풀 충전
+                let weaknessPool = remainingPool.slice(0, 15).sort(() => Math.random() - 0.5);
+                finalPool.push(...weaknessPool.slice(0, 10));
+
+                // 최종 20문항 완성 후 문항 순서 무작위 전개
+                selectedQuestions = finalPool.sort(() => Math.random() - 0.5);
+            }
+
             userAnswers = new Array(selectedQuestions.length).fill(null);
+            currentIdx = 0;
+            
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
             renderQuestion();
         }
 
+        // 문제 렌더링 파이프라인
         function renderQuestion() {
             const q = selectedQuestions[currentIdx];
             document.getElementById('progress').innerText = `문제 ${currentIdx + 1} / ${selectedQuestions.length}`;
+            
+            // AI 모드 작동 시 배지 표시 시각화 정보 추가
+            const badgeZone = document.getElementById('badge-zone');
+            if (activeMode === 'ai') {
+                badgeZone.innerHTML = `<span style="background:#e8f0fe; color:#1a73e8; font-size:0.75rem; padding:4px 8px; border-radius:20px; font-weight:bold;">AI 추천: ${q.category}</span>`;
+            } else {
+                badgeZone.innerHTML = '';
+            }
+
             document.getElementById('question-text').innerText = q.question;
             const imgContainer = document.getElementById('image-container');
-            imgContainer.innerHTML = q.image ? `<img src="${q.image}" alt="문제 이미지">` : "";
+            imgContainer.innerHTML = q.image ? `<img src="image/${q.image}" alt="문항 시각 사료">` : "";
 
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = '';
@@ -199,7 +293,7 @@
                 optionsDiv.innerHTML += `
                     <label class="option-item">
                         <input type="radio" name="choice" value="${i}" ${isChecked} onchange="selectAnswer(${i})">
-                        <span>${opt}</span>
+                        <span>${i + 1}. ${opt}</span>
                     </label>
                 `;
             });
@@ -211,7 +305,7 @@
         function selectAnswer(index) { userAnswers[currentIdx] = index; }
 
         function goNext() {
-            if (userAnswers[currentIdx] === null) return alert("정답을 선택해 주세요!");
+            if (userAnswers[currentIdx] === null) return alert("문항의 보기 중 정답을 선택해 주세요!");
             if (currentIdx < selectedQuestions.length - 1) {
                 currentIdx++;
                 renderQuestion();
@@ -227,15 +321,27 @@
             }
         }
 
+        // 성적 연산 및 실시간 통계 학습 데이터 트래킹 처리
         function showResult() {
             let correctCount = 0;
             const tableBody = document.getElementById('review-table-body');
             tableBody.innerHTML = ''; 
 
+            // 로컬 스토리지 기존 통계 상태 스냅샷 로드
+            let stats = JSON.parse(localStorage.getItem('hangeungom_stats')) || {};
+            categories.forEach(cat => {
+                if (!stats[cat]) stats[cat] = { correct: 0, wrong: 0 };
+            });
+
             userAnswers.forEach((ans, i) => {
                 const q = selectedQuestions[i];
                 const isCorrect = (ans === q.answer);
                 if (isCorrect) correctCount++;
+
+                // 학습 데이터 누적 업데이트 연산
+                const cat = q.category || "고대";
+                if (isCorrect) stats[cat].correct += 1;
+                else stats[cat].wrong += 1;
 
                 const row = `
                     <tr class="clickable" onclick="showDetail(${i})">
@@ -249,11 +355,56 @@
                 tableBody.innerHTML += row;
             });
 
+            // 데이터 영속성 처리 (Persistent Storage)
+            localStorage.setItem('hangeungom_stats', JSON.stringify(stats));
+
             const score = Math.round((100 / selectedQuestions.length) * correctCount);
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = `${score}점`;
-            document.getElementById('feedback-msg').innerText = score >= 80 ? "합격 안정권입니다!" : "오답 확인 후 다시 도전하세요!";
+            document.getElementById('feedback-msg').innerText = score >= 80 ? "합격 안정권입니다!" : "오답 분석 확인 후 AI 모드를 통해 약점을 극복해 보세요!";
+
+            // 차트 인스턴스 시각화 출력 모듈 호출
+            renderAnalysisChart(stats);
+        }
+
+        // 차트 컴포넌트 시각화 바인딩 모듈 (Chart.js 엔진)
+        function renderAnalysisChart(stats) {
+            const ctx = document.getElementById('weaknessChart').getContext('2d');
+            
+            // 각 카테고리별 정답 점수 가공 (정답률 벡터 변환)
+            const dataScores = categories.map(cat => {
+                const correct = stats[cat]?.correct || 0;
+                const wrong = stats[cat]?.wrong || 0;
+                const total = correct + wrong;
+                return total === 0 ? 100 : Math.round((correct / total) * 100);
+            });
+
+            // 방사형 능력치 분석 그래프 바인딩 (졸업작품 전공 어필 타겟 지점)
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        label: '나의 단원별 정답률 (%)',
+                        data: dataScores,
+                        backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                        borderColor: '#1a73e8',
+                        pointBackgroundColor: '#1a73e8',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
         }
 
         function showDetail(idx) {
@@ -262,20 +413,20 @@
             const modalBody = document.getElementById('modal-body');
             
             let html = `<p style="font-weight:bold; font-size:1.1rem; line-height:1.4;">${q.question}</p>`;
-            if (q.image) html += `<img src="${q.image}">`;
+            if (q.image) html += `<img src="image/${q.image}">`;
             
             q.options.forEach((opt, i) => {
                 let statusClass = "";
                 if (i === q.answer) statusClass = "opt-correct";
                 else if (i === userAns) statusClass = "opt-wrong";
-                html += `<div class="option-item ${statusClass}" style="cursor:default;">${i+1}. ${opt}</div>`;
+                html += `<div class="option-item ${statusClass}" style="cursor:default;">${opt}</div>`;
             });
             
             modalBody.innerHTML = html;
             const modal = document.getElementById('modal');
-            modal.style.display = "flex"; // 중앙 정렬을 위해 flex 사용
+            modal.style.display = "flex"; 
             document.body.style.overflow = "hidden"; 
-            document.querySelector('.modal-content').scrollTop = 0; // 모달 열 때 스크롤 상단으로
+            document.querySelector('.modal-content').scrollTop = 0; 
         }
 
         function closeModal() {
